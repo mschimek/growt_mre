@@ -59,7 +59,7 @@ int main() {
       num_unsucessful_finds += (res != value);
       num_sucessful_finds += (res == value);
       if (res != value) {
-        std::cout << "key: " << key << " value: " << value
+        std::cout << "key: " << key << " expected value: " << value
                   << " found value: " << res << std::endl;
       }
     }
