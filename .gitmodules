@@ -1,0 +1,3 @@
+[submodule "external/growt"]
+	path = external/growt
+	url = https://github.com/TooBiased/growt.git
