@@ -3,8 +3,10 @@
 #include <vector>
 #include <thread>
 #include <chrono>
-
 #include <type_traits>
+
+#include <tbb/parallel_for.h>
+
 #include "growt/allocator/alignedallocator.hpp"
 #include "growt/data-structures/table_config.hpp"
 #include "growt/utils/hash/murmur2_hash.hpp"
@@ -35,6 +37,20 @@ inline void parallel_for(std::size_t begin, std::size_t end, F&& f) {
 	std::cout << "finished parallel" << std::endl;
 }
 
+template <typename F>
+inline void parallel_for_tbb(std::size_t begin, std::size_t end, F&& f) {
+
+	tbb::parallel_for( tbb::blocked_range<int>(begin,end),
+			[&](tbb::blocked_range<int> r)
+			{
+			for (std::size_t i=r.begin(); i<r.end(); ++i)
+			{
+			f(i);
+			}  
+			});
+	std::cout << "finished parallel tbb" << std::endl;
+}
+
 int main() {
   const std::size_t n = 1ull << 20;
   std::cout << "n: " << n << std::endl;
@@ -52,7 +68,7 @@ int main() {
     GlobalVIdMap map{map_size};
 
     // fill table
-    parallel_for(0, data.size(), [&](std::size_t i) {
+    parallel_for_tbb(0, data.size(), [&](std::size_t i) {
       const auto key = data[i].first;
       const auto value = data[i].second;
       const auto [it, _] = map.insert(key + 1, value);
@@ -62,7 +78,7 @@ int main() {
       }
     });
     //sleep
-    std::this_thread::sleep_for(500ms);
+    std::this_thread::sleep_for(1000ms);
 
     // retrieve values and check
     for (std::size_t i = 0; i < n; ++i) {
