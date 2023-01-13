@@ -1,12 +1,15 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <thread>
+#include <chrono>
 
 #include <type_traits>
 #include "growt/allocator/alignedallocator.hpp"
 #include "growt/data-structures/table_config.hpp"
 #include "growt/utils/hash/murmur2_hash.hpp"
 
+using namespace std::chrono_literals;
 using VId = std::uint64_t;
 using DefaultHasherType = utils_tm::hash_tm::murmur2_hash;
 using DefaultAllocatorType = ::growt::AlignedAllocator<>;
@@ -17,10 +20,19 @@ using GlobalVIdMap =
 
 template <typename F>
 inline void parallel_for(std::size_t begin, std::size_t end, F&& f) {
-#pragma omp parallel for schedule(static)
-  for (std::size_t i = begin; i < end; ++i) {
-    f(i);
-  }
+#pragma omp parallel
+	{
+#pragma omp for schedule(static)
+		for (std::size_t i = begin; i < end; ++i) {
+			f(i);
+		}
+#pragma omp barrier
+#pragma omp single
+		{
+			std::cout << "finished loop" << std::endl;
+		}
+	}
+	std::cout << "finished parallel" << std::endl;
 }
 
 int main() {
@@ -49,6 +61,8 @@ int main() {
         std::abort();
       }
     });
+    //sleep
+    std::this_thread::sleep_for(500ms);
 
     // retrieve values and check
     for (std::size_t i = 0; i < n; ++i) {
